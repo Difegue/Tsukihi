@@ -1,0 +1,219 @@
+// Use of this source code is governed by a license that can be
+// found in the LICENSE file.
+
+'use strict';
+
+let tabHashmap = new Map();
+
+/**
+ * // Update the tab's browserAction, and update data in popup and hashmap.
+ * @param {*} tab Tab to update
+ * @param {*} badgeColor Color of tab badge
+ * @param {*} badgeText Text of tab badge
+ * @param {*} infoObject Info object, should contain at least the "status" element.
+ */
+function updateTabInfo(tab, badgeColor, badgeText, infoObject) {
+
+  chrome.tabs.get(tab.id, function () {
+
+    if (chrome.runtime.lastError) {
+
+      // Tab has likely been closed
+      console.log(chrome.runtime.lastError.message);
+      tabHashmap.delete(tab.id);
+    } else {
+
+      // Tab exists
+      chrome.browserAction.setBadgeBackgroundColor({ color: badgeColor, tabId: tab.id });
+      chrome.browserAction.setBadgeText({ text: badgeText, tabId: tab.id });
+
+      // Save info in hashmap, and send it to the popup if it's open
+      tabHashmap.set(tab.id, infoObject);
+      chrome.runtime.sendMessage({ type: "updateFromBackground", data: infoObject });
+    }
+  });
+}
+
+/**
+ * Send a call to the source finder to check if the given URL is already downloaded or not.
+ * Updates the badge with the results
+ * @param {*} serverUrl URL to LRR server 
+ * @param {*} apiKey API Key for LRR server
+ * @param {*} url URL to check
+ */
+function checkUrl(serverUrl, apiKey, tab) {
+
+  updateTabInfo(tab, "rgb(255,174,0)", "...", { status: "checking", message: "Asking the server..." });
+
+  if (tab.url === undefined) {
+    updateTabInfo(tab, "rgb(54, 57, 64)", "???", { status: "other", message: "Not a downloadable URL. " });
+    return;
+  }
+
+  // The urlfinder plugin can handle the url as is.
+  console.log(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`);
+
+  fetch(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`,
+    { method: "POST", headers: getAuthHeader(apiKey) })
+    .then(response => response.json())
+    .then((r) => {
+      if (r.success === 1) {
+        updateTabInfo(tab, "rgb(25, 194, 48)", "✔", { status: "downloaded", arcId: r.data.id });
+      } else {
+        updateTabInfo(tab, "rgb(54, 57, 64)", "X", { status: "other", message: r.error });
+      }
+    })
+    .catch(error => {
+      updateTabInfo(tab, "rgb(194,25,25)", "ERR", { status: "other", message: error });
+      showNotification("Error while checking URL :", error);
+    });
+
+}
+
+// Send URLs to the Download API and add a checkJobStatus to track its progress.
+function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
+
+  let formData = new FormData();
+  formData.append('url', tab.url);
+
+  if (categoryID !== "") {
+    formData.append('catid', categoryID);
+  }
+
+  fetch(`${serverUrl}/api/download_url`, { method: "POST", body: formData, headers: getAuthHeader(apiKey) })
+    .then(response => response.json())
+    .then((data) => {
+      if (data.success) {
+
+        updateTabInfo(tab, "rgb(64,124,255)", "#" + data.job, { status: "downloading", jobId: data.job });
+        showNotification(`Download for ${tab.url}`, `Queued as job #${data.job}!`);
+
+        // Check minion job state periodically to update the result 
+        checkJobStatus(serverUrl, apiKey, data.job,
+          (d) => handleDownloadResult(tab, d.result),
+          (error) => console.log(error));
+      } else {
+        throw new Error(data.message);
+      }
+    })
+    .catch(error => showNotification("Error while queuing your Download", error));
+}
+
+function handleDownloadResult(tab, data) {
+
+  if (data.success === 1) {
+    updateTabInfo(tab, "rgb(25, 194, 48)", "✔", { status: "downloaded", arcId: data.id });
+  } else {
+    updateTabInfo(tab, "rgb(54, 57, 64)", "X", { status: "other", message: data.message });
+    showNotification(`Download for ${tab.url}`, `Failed: ${data.message}`);
+  }
+}
+
+/**
+ * Setup on extension init.
+ */
+chrome.runtime.onInstalled.addListener(function () {
+
+  chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+    if (changeInfo.url) {
+      onNewUrl(tab);
+    }
+  });
+
+  chrome.tabs.onActivated.addListener(function (activeInfo) {
+    chrome.tabs.get(activeInfo.tabId, function (tab) {
+      onNewUrl(tab);
+    });
+  });
+
+  chrome.runtime.onMessage.addListener(
+    function (request, sender, callback) {
+
+      // Multi-tab download req
+
+      // Single tab download req
+      if (request.type == "downloadUrl") {
+        chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
+          sendDownloadRequest(request.tab, result.server, result.api, result.categoryID, request.url);
+        });
+      }
+
+      // Tab info req
+      if (request.type == "getTabInfo") {
+        callback(tabHashmap.get(request.tab.id));
+      }
+
+      // Reverify tab req
+      if (request.type == "recheckTab") {
+        tabHashmap.delete(request.tab.id);
+        onNewUrl(request.tab);
+      }
+
+    });
+
+});
+
+
+function onNewUrl(tab) {
+  // If the tab already has a browserAction, we do nothing
+  if (!tabHashmap.has(tab.id))
+    chrome.storage.sync.get(['server', 'api'], function (result) {
+
+      if (typeof result.server !== 'undefined') // check for undefined
+        checkUrl(result.server, result.api, tab);
+      else
+        updateTabInfo(tab, "rgb(54, 57, 64)", "NC", { status: "other", message: "Please setup your server settings." });
+    });
+}
+
+function getAuthHeader(apiKey) {
+  return { Authorization: "Bearer " + btoa(apiKey) };
+}
+
+function showNotification(title, msg) {
+
+  var opt = {
+    type: "basic",
+    title: title,
+    message: (typeof msg === 'string' || msg instanceof String) ? msg : JSON.stringify(msg),
+    iconUrl: "images/get_started128.png"
+  }
+
+  console.log(title + " " + msg);
+  chrome.notifications?.create(null, opt, null);
+}
+
+/**
+* Checks the status of a Download job until it's completed.
+* Execute a callback on successful job completion.
+* @param {*} serverUrl 
+* @param {*} apiKey 
+* @param {*} jobId 
+* @param {*} callback 
+* @param {*} failureCallback 
+*/
+function checkJobStatus(serverUrl, apiKey, jobId, callback, failureCallback) {
+
+  fetch(`${serverUrl}/api/minion/${jobId}`, { method: "GET", headers: getAuthHeader(apiKey) })
+    .then(response => response.ok ? response.json() : { success: 0, error: "Response was not OK" })
+    .then((data) => {
+
+      if (data.error)
+        throw new Error(data.error);
+
+      if (data.state === "failed") {
+        throw new Error(data.result);
+      }
+
+      if (data.state !== "finished") {
+        // Wait and retry, job isn't done yet
+        setTimeout(function () {
+          checkJobStatus(serverUrl, apiKey, jobId, callback, failureCallback);
+        }, 2000);
+      } else {
+        // Update UI with info
+        callback(data);
+      }
+    })
+    .catch(error => { showNotification("URL Download Failed", error); failureCallback(error) });
+}

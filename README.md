@@ -1,2 +1,2 @@
 # Tsukihi
-🐦 Browser WebExtension for LANraragi.
+Browser WebExtension for LANraragi.

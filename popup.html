@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      background: #F4F4F4;
+      background-image: url(./images/popup.png);
+      background-repeat: no-repeat;
+      background-position: bottom left;
+      width: 318px;
+      height: 250px;
+      text-align: center;
+      background-size: 40%;
+    }
+
+    button {
+      width: 160px;
+      height: 32px;
+      margin-bottom: 8px;
+      margin-left: 128px;
+    }
+
+    .recheck-link {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div>
+
+    <div style="font-size:32px" id="statusIcon"></div>
+    <a href="#" id="recheckTab" class="recheck-link">Recheck?</a>
+
+    <div style="font-weight: 600; font-size: 18px;">This tab is<span id="statusMsg"></span></div>
+    <span id="statusDetail">The status message goes here.</span>
+
+    <hr>
+
+    <button id="downloadUrl">Download this tab</button>
+    <button id="downloadLeft">Queue tabs on the left</button>
+    <button id="downloadRight">Queue tabs on the right</button>
+    <button id="openSettings">Open extension settings</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+
+</html>

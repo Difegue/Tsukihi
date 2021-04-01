@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      background: #91C5D2;
+      background-image: url(./images/settings.png);
+      background-repeat: no-repeat;
+      background-position: bottom right;
+      height: 98vh;
+      background-size: 40%;
+    }
+
+    table {
+      margin: auto;
+      background: #ffffffbf;
+      border-radius: 4px;
+      padding: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <table width="66%">
+
+    <tr>
+      <td colspan="2">
+        <h2>Server settings</h2>
+      </td>
+    </tr>
+
+    <tr>
+      <td>Server URL :</td>
+      <td>
+        <input type="url" id="server" name="server" />
+      </td>
+    </tr>
+
+    <tr>
+      <td>API Key :</td>
+      <td>
+        <input type="password" id="key" name="key" />
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        <button id="checkBtn">Check Server Status</button>
+      </td>
+      <td>
+        <span id="serverMsg"></span><br />
+        <span id="apiCheck"></span>
+      </td>
+    </tr>
+
+  </table>
+
+  <br>
+  <table width="66%">
+    <tr>
+      <td colspan="2">
+        <h2>Download settings</h2>
+      </td>
+    </tr>
+    <tr>
+      <td>Downloaded URLs will be <br>added to this Category:</td>
+      <td>
+        <input type="text" id="catid" name="catid" />
+      </td>
+    </tr>
+  </table>
+
+  <br>
+  <table width="66%">
+    <tr>
+      <td colspan="2">
+        <button id="saveBtn">Save Settings</button>
+        <span id="statusMsg"></span>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="2">
+        <br />
+        <span>You're using the <a href="http://github.com/Difegue/Tsukihi">Tsukihi</a>
+          extension for <a href="http://github.com/Difegue/LANraragi">LANraragi</a>,
+          Version <span id="versionInfo">0.1</span>. 🐦</span>
+      </td>
+    </tr>
+  </table>
+
+
+
+</body>
+<script src="options.js"></script>
+
+</html>
