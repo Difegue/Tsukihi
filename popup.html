@@ -13,6 +13,7 @@
       height: 250px;
       text-align: center;
       background-size: 40%;
+      font-size: 12px;
     }
 
     button {
@@ -20,12 +21,19 @@
       height: 32px;
       margin-bottom: 8px;
       margin-left: 128px;
+      font-size: 13px;
     }
 
     .recheck-link {
       position: absolute;
       top: 8px;
       right: 8px;
+    }
+
+    .downloads-link {
+      position: absolute;
+      top: 8px;
+      left: 8px;
     }
   </style>
 </head>
@@ -35,14 +43,16 @@
   <div>
 
     <div style="font-size:32px" id="statusIcon"></div>
-    <a href="#" id="recheckTab" class="recheck-link">Recheck?</a>
+    <a href="#" id="allDownloads" title="This will open your LRR server's Minion Console." class="downloads-link">
+      All Downloads</a>
+    <a href="#" id="recheckTab" title="Ask the server for this Tab again." class="recheck-link">Recheck?</a>
 
     <div style="font-weight: 600; font-size: 18px;">This tab is<span id="statusMsg"></span></div>
     <span id="statusDetail">The status message goes here.</span>
 
     <hr>
 
-    <button id="downloadUrl">Download this tab</button>
+    <button id="downloadUrl" title="Queue this tab's URL for downloading on your LRR server.">Download this tab</button>
     <button id="downloadLeft">Queue tabs on the left</button>
     <button id="downloadRight">Queue tabs on the right</button>
     <button id="openSettings">Open extension settings</button>

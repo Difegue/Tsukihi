@@ -98,8 +98,8 @@ function checkUrl(serverUrl, apiKey, tab) {
       }
     })
     .catch(error => {
-      updateTabInfo(tab, { status: "error", message: error });
-      showNotification("Error while checking URL :", error);
+      updateTabInfo(tab, { status: "error", message: error.toString() });
+      showNotification("Error while checking URL :", error.toString());
     });
 
 }
@@ -135,7 +135,7 @@ function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
         throw new Error(data.message);
       }
     })
-    .catch(error => showNotification("Error while queuing your Download", error));
+    .catch(error => showNotification("Error while queuing your Download", error.toString()));
 }
 
 function handleDownloadResult(tab, data) {
@@ -210,8 +210,8 @@ function onNewUrl(tab) {
   // If the tab already has a browserAction, we do nothing
   if (!tabHashmap.has(tab.id))
     chrome.storage.sync.get(['server', 'api'], function (result) {
-      if (typeof result.server !== 'undefined') // check for undefined
-        checkUrl(result.server, result.api, tab);
+      if (typeof result.server !== 'undefined' && result.server.trim() !== "") // check for undefined
+        checkUrl(result.server.trim(), result.api, tab);
       else
         updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
     });
@@ -266,5 +266,5 @@ function checkJobStatus(serverUrl, apiKey, jobId, callback, failureCallback) {
         callback(data);
       }
     })
-    .catch(error => { showNotification("URL Download Failed", error); failureCallback(error) });
+    .catch(error => { showNotification("URL Download Failed", error.toString()); failureCallback(error) });
 }

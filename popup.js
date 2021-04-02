@@ -32,6 +32,15 @@ document.getElementById('downloadRight').onclick = () =>
     chrome.runtime.sendMessage({ type: "batchDownload", tabs: getRightSideTags(tabs) });
   });
 
+
+document.getElementById('allDownloads').onclick = () => chrome.storage.sync.get(['server'], function (result) {
+  if (typeof result.server !== 'undefined' && result.server.trim() !== "") // check for undefined
+    chrome.tabs.create({
+      url: `${result.server}/minion/jobs`
+    });
+});
+
+
 document.getElementById('openSettings').onclick = () => chrome.runtime.openOptionsPage();
 
 document.getElementById('recheckTab').onclick = () =>
@@ -53,7 +62,13 @@ function updatePopup(dataFromBackground) {
         document.getElementById('statusMsg').textContent = " saved to your LRR server!";
         document.getElementById('statusMsg').style = "color:green"
         document.getElementById('downloadUrl').disabled = true;
-        document.getElementById('statusDetail').textContent = `(id: ${dataFromBackground.arcId})`;
+
+        chrome.storage.sync.get(['server'], function (result) {
+          document.getElementById('statusDetail').innerHTML = `(id: <a href="${result.server}/reader?id=${dataFromBackground.arcId}" target= "_blank">
+            ${dataFromBackground.arcId}</a>)`;
+        });
+
+
         break;
       case "downloading":
         document.getElementById('statusIcon').textContent = "🔜";
