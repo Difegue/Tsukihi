@@ -26,7 +26,8 @@ function updateTabInfo(tab, infoObject) {
 
       // Save info in hashmap, and send it to the popup if it's open
       tabHashmap.set(tab.id, infoObject);
-      chrome.runtime.sendMessage({ type: "updateFromBackground", data: infoObject });
+      if (tab.active)
+        chrome.runtime.sendMessage({ type: "updateFromBackground", data: infoObject });
     }
   });
 }
@@ -106,6 +107,11 @@ function checkUrl(serverUrl, apiKey, tab) {
 // Send URLs to the Download API and add a checkJobStatus to track its progress.
 function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
 
+  if (tab.url === undefined) {
+    updateTabInfo(tab, { status: "other", message: "Not a downloadable URL. " });
+    return;
+  }
+
   let formData = new FormData();
   formData.append('url', tab.url);
 
@@ -167,11 +173,20 @@ chrome.runtime.onInstalled.addListener(function () {
     function (request, sender, callback) {
 
       // Multi-tab download req
+      if (request.type == "batchDownload") {
+        chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
+
+          request.tabs?.forEach(tab => {
+            sendDownloadRequest(tab, result.server, result.api, result.categoryID);
+          });
+
+        });
+      }
 
       // Single tab download req
       if (request.type == "downloadUrl") {
         chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
-          sendDownloadRequest(request.tab, result.server, result.api, result.categoryID, request.url);
+          sendDownloadRequest(request.tab, result.server, result.api, result.categoryID);
         });
       }
 

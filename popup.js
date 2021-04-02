@@ -9,38 +9,42 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 });
 
 // Add a listener to receive dynamic updates from background.js
-chrome.runtime.onMessage.addListener(
-  function (request, sender, callback) {
+chrome.runtime.onMessage.addListener((request, s, c) => {
 
-    if (request.type == "updateFromBackground") {
-      updatePopup(request.data);
-    }
-
+  if (request.type == "updateFromBackground") {
+    updatePopup(request.data);
   }
-);
+});
 
 // Hook up buttons
-document.getElementById('downloadUrl').onclick = function (element) {
+document.getElementById('downloadUrl').onclick = () =>
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     chrome.runtime.sendMessage({ type: "downloadUrl", tab: tabs[0] });
   });
-};
 
-document.getElementById('openSettings').onclick = function (element) {
-  chrome.runtime.openOptionsPage()
-};
+document.getElementById('downloadLeft').onclick = () =>
+  chrome.tabs.query({ currentWindow: true }, function (tabs) {
+    chrome.runtime.sendMessage({ type: "batchDownload", tabs: getLeftSideTags(tabs) });
+  });
 
-document.getElementById('recheckTab').onclick = function (element) {
+document.getElementById('downloadRight').onclick = () =>
+  chrome.tabs.query({ currentWindow: true }, function (tabs) {
+    chrome.runtime.sendMessage({ type: "batchDownload", tabs: getRightSideTags(tabs) });
+  });
+
+document.getElementById('openSettings').onclick = () => chrome.runtime.openOptionsPage();
+
+document.getElementById('recheckTab').onclick = () =>
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     chrome.runtime.sendMessage({ type: "recheckTab", tab: tabs[0] });
   });
-};
 
 // Wow actual logic
 function updatePopup(dataFromBackground) {
 
   console.log("Received data from background.js: " + JSON.stringify(dataFromBackground));
   document.getElementById('statusMsg').style = "color:black"
+  document.getElementById('downloadUrl').disabled = false;
 
   try {
     switch (dataFromBackground.status) {
@@ -48,6 +52,7 @@ function updatePopup(dataFromBackground) {
         document.getElementById('statusIcon').textContent = "✅";
         document.getElementById('statusMsg').textContent = " saved to your LRR server!";
         document.getElementById('statusMsg').style = "color:green"
+        document.getElementById('downloadUrl').disabled = true;
         document.getElementById('statusDetail').textContent = `(id: ${dataFromBackground.arcId})`;
         break;
       case "downloading":
@@ -84,5 +89,44 @@ function updatePopup(dataFromBackground) {
     document.getElementById('statusMsg').textContent = " a mystery.";
     document.getElementById('statusDetail').textContent = `(${e})`;
   }
+}
 
+function getLeftSideTags(tabs) {
+  var filtered_tabs = [];
+  var activeIndex = -1;
+
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].active) {
+      activeIndex = tabs[i].index;
+      break;
+    }
+  }
+
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].index < activeIndex) {
+      filtered_tabs.push(tabs[i]);
+    }
+  }
+
+  return filtered_tabs;
+}
+
+function getRightSideTags(tabs) {
+  var filtered_tabs = [];
+  var activeIndex = -1;
+
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].active) {
+      activeIndex = tabs[i].index;
+      break;
+    }
+  }
+
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].index > activeIndex) {
+      filtered_tabs.push(tabs[i]);
+    }
+  }
+
+  return filtered_tabs;
 }
