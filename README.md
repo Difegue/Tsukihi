@@ -2,13 +2,18 @@
 
 ![Extension screenshot on Edge](screenshot.png)
 
-Tiny WebBrowser helper for LANraragi. 🐦
+Tiny WebBrowser helper for ![LANraragi](https://github.com/Difegue/LANraragi). 🐦
 
 ## Features  
 
 * Asks your LRR server whether it has downloaded the URL you're currently looking at  
 * If not, provides quick shortcut buttons to queue the URL for downloading, or its left-side/right-side neighbors
 * Downloaded URLs can be automatically added to a Category on the Server for your read-later scenarios
+
+## Required LRR Server Version
+
+* Basic URL Downloading: From **v.0.7.3** - _"Glass Spider"_ onwards.
+* Full support: From **v.0.7.8** - _"Looking for Lester"_ onwards.
 
 ## Installation on Chrome and derivatives  
 
@@ -23,7 +28,7 @@ If you use Chrome, it will probably nag you about using an unpacked extension no
 
 ## Installation on Firefox (signed xpi)
 
-0. Download the latest signed .xpi file from this [MEGA Folder]()
+0. Download the latest signed .xpi file from the [Releases](https://github.com/Difegue/Tsukihi/releases)
 1. Open the extensions page in Firefox, then use the 'Install Add-on From File...' item from the gear menu
 2. Do the basic setup procedure to connect the extension to LANraragi (see below)
 
