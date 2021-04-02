@@ -1,6 +1,6 @@
 {
   "name": "Tsukihi",
-  "version": "0.5",
+  "version": "0.6",
   "description": "Send URLs to your LANraragi server for downloading! 🐦",
   "permissions": [
     "activeTab",
@@ -24,8 +24,7 @@
   "background": {
     "scripts": [
       "background.js"
-    ],
-    "persistent": true
+    ]
   },
   "browser_action": {
     "default_popup": "popup.html",

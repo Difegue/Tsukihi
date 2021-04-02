@@ -64,8 +64,10 @@ function updatePopup(dataFromBackground) {
         document.getElementById('downloadUrl').disabled = true;
 
         chrome.storage.sync.get(['server'], function (result) {
-          document.getElementById('statusDetail').innerHTML = `(id: <a href="${result.server}/reader?id=${dataFromBackground.arcId}" target= "_blank">
-            ${dataFromBackground.arcId}</a>)`;
+          safeHtmlInject(document.getElementById('statusDetail'),
+            `<span>(id: <a href="${result.server}/reader?id=${dataFromBackground.arcId}" target= "_blank">
+                  ${dataFromBackground.arcId}
+                </a>)</span>`);
         });
 
 
@@ -144,4 +146,19 @@ function getRightSideTags(tabs) {
   }
 
   return filtered_tabs;
+}
+
+// Thanks firefox I guess https://devtidbits.com/2017/12/06/quick-fix-the-unsafe_var_assignment-warning-in-javascript
+function safeHtmlInject(element, html) {
+
+  element.textContent = "";
+
+  const parser = new DOMParser()
+  const parsed = parser.parseFromString(html, "text/html")
+  const tags = parsed.getElementsByTagName("body")[0].children;
+
+  for (const tag of tags) {
+    element.appendChild(tag)
+  }
+
 }

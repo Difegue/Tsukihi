@@ -6,7 +6,113 @@
 let tabHashmap = new Map();
 
 /**
- * // Update the tab's browserAction, and update data in popup and hashmap.
+ * Setup on extension init.
+ */
+
+chrome.runtime.onInstalled.addListener(function () {
+  chrome.runtime.openOptionsPage();
+});
+
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+  if (changeInfo.url) {
+    tabHashmap.delete(tabId);
+    onNewUrl(tab);
+  } else if (changeInfo.status && tabHashmap.has(tabId)) {
+    // Per-tab badges go away when the tab is refreshed, so we put 'em back
+    updateBadge(tab, tabHashmap.get(tabId));
+  }
+});
+
+chrome.tabs.onActivated.addListener(function (activeInfo) {
+  chrome.tabs.get(activeInfo.tabId, function (tab) {
+    onNewUrl(tab);
+  });
+});
+
+chrome.runtime.onMessage.addListener(
+  function (request, sender, callback) {
+
+    // Multi-tab download req
+    if (request.type == "batchDownload") {
+      chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
+
+        request.tabs?.forEach(tab => {
+          sendDownloadRequest(tab, result.server, result.api, result.categoryID);
+        });
+
+      });
+    }
+
+    // Single tab download req
+    if (request.type == "downloadUrl") {
+      chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
+        sendDownloadRequest(request.tab, result.server, result.api, result.categoryID);
+      });
+    }
+
+    // Tab info req
+    if (request.type == "getTabInfo") {
+      callback(tabHashmap.get(request.tab.id));
+    }
+
+    // Reverify tab req
+    if (request.type == "recheckTab") {
+      tabHashmap.delete(request.tab.id);
+      onNewUrl(request.tab);
+    }
+
+  });
+
+
+function onNewUrl(tab) {
+  // If the tab already has a browserAction, we do nothing
+  if (!tabHashmap.has(tab.id))
+    chrome.storage.sync.get(['server', 'api'], function (result) {
+      if (typeof result.server !== 'undefined' && result.server.trim() !== "") // check for undefined
+        checkUrl(result.server.trim(), result.api, tab);
+      else
+        updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
+    });
+}
+
+/**
+ * Send a call to the source finder to check if the given URL is already downloaded or not.
+ * Updates the badge with the results
+ * @param {*} serverUrl URL to LRR server 
+ * @param {*} apiKey API Key for LRR server
+ * @param {*} url URL to check
+ */
+function checkUrl(serverUrl, apiKey, tab) {
+
+  updateTabInfo(tab, { status: "checking" });
+
+  if (tab.url === undefined) {
+    updateTabInfo(tab, { status: "other", message: "Not a downloadable URL. " });
+    return;
+  }
+
+  // The urlfinder plugin can handle the url as is.
+  console.log(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`);
+
+  fetch(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`,
+    { method: "POST", headers: getAuthHeader(apiKey) })
+    .then(response => response.json())
+    .then((r) => {
+      if (r.success === 1) {
+        updateTabInfo(tab, { status: "downloaded", arcId: r.data.id });
+      } else {
+        updateTabInfo(tab, { status: "other", message: r.error });
+      }
+    })
+    .catch(error => {
+      updateTabInfo(tab, { status: "error", message: error.toString() });
+      showNotification("Error while checking URL :", error.toString());
+    });
+
+}
+
+/**
+ * Update the tab's browserAction, and update data in popup and hashmap.
  * @param {*} tab Tab to update
  * @param {*} infoObject Info object, should contain at least the "status" element.
  */
@@ -68,42 +174,6 @@ function updateBadge(tab, info) {
   chrome.browserAction.setBadgeText({ text: text, tabId: tab.id });
 }
 
-/**
- * Send a call to the source finder to check if the given URL is already downloaded or not.
- * Updates the badge with the results
- * @param {*} serverUrl URL to LRR server 
- * @param {*} apiKey API Key for LRR server
- * @param {*} url URL to check
- */
-function checkUrl(serverUrl, apiKey, tab) {
-
-  updateTabInfo(tab, { status: "checking" });
-
-  if (tab.url === undefined) {
-    updateTabInfo(tab, { status: "other", message: "Not a downloadable URL. " });
-    return;
-  }
-
-  // The urlfinder plugin can handle the url as is.
-  console.log(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`);
-
-  fetch(`${serverUrl}/api/plugins/use?plugin=urlfinder&arg=${tab.url}`,
-    { method: "POST", headers: getAuthHeader(apiKey) })
-    .then(response => response.json())
-    .then((r) => {
-      if (r.success === 1) {
-        updateTabInfo(tab, { status: "downloaded", arcId: r.data.id });
-      } else {
-        updateTabInfo(tab, { status: "other", message: r.error });
-      }
-    })
-    .catch(error => {
-      updateTabInfo(tab, { status: "error", message: error.toString() });
-      showNotification("Error while checking URL :", error.toString());
-    });
-
-}
-
 // Send URLs to the Download API and add a checkJobStatus to track its progress.
 function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
 
@@ -146,75 +216,6 @@ function handleDownloadResult(tab, data) {
     updateTabInfo(tab, { status: "error", message: data.message });
     showNotification(`Download for ${tab.url}`, `Failed: ${data.message}`);
   }
-}
-
-/**
- * Setup on extension init.
- */
-chrome.runtime.onInstalled.addListener(function () {
-
-  chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-    if (changeInfo.url) {
-      tabHashmap.delete(tabId);
-      onNewUrl(tab);
-    } else if (changeInfo.status && tabHashmap.has(tabId)) {
-      // Per-tab badges go away when the tab is refreshed, so we put 'em back
-      updateBadge(tab, tabHashmap.get(tabId));
-    }
-  });
-
-  chrome.tabs.onActivated.addListener(function (activeInfo) {
-    chrome.tabs.get(activeInfo.tabId, function (tab) {
-      onNewUrl(tab);
-    });
-  });
-
-  chrome.runtime.onMessage.addListener(
-    function (request, sender, callback) {
-
-      // Multi-tab download req
-      if (request.type == "batchDownload") {
-        chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
-
-          request.tabs?.forEach(tab => {
-            sendDownloadRequest(tab, result.server, result.api, result.categoryID);
-          });
-
-        });
-      }
-
-      // Single tab download req
-      if (request.type == "downloadUrl") {
-        chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
-          sendDownloadRequest(request.tab, result.server, result.api, result.categoryID);
-        });
-      }
-
-      // Tab info req
-      if (request.type == "getTabInfo") {
-        callback(tabHashmap.get(request.tab.id));
-      }
-
-      // Reverify tab req
-      if (request.type == "recheckTab") {
-        tabHashmap.delete(request.tab.id);
-        onNewUrl(request.tab);
-      }
-
-    });
-
-});
-
-
-function onNewUrl(tab) {
-  // If the tab already has a browserAction, we do nothing
-  if (!tabHashmap.has(tab.id))
-    chrome.storage.sync.get(['server', 'api'], function (result) {
-      if (typeof result.server !== 'undefined' && result.server.trim() !== "") // check for undefined
-        checkUrl(result.server.trim(), result.api, tab);
-      else
-        updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
-    });
 }
 
 function getAuthHeader(apiKey) {
