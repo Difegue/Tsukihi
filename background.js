@@ -8,11 +8,9 @@ let tabHashmap = new Map();
 /**
  * // Update the tab's browserAction, and update data in popup and hashmap.
  * @param {*} tab Tab to update
- * @param {*} badgeColor Color of tab badge
- * @param {*} badgeText Text of tab badge
  * @param {*} infoObject Info object, should contain at least the "status" element.
  */
-function updateTabInfo(tab, badgeColor, badgeText, infoObject) {
+function updateTabInfo(tab, infoObject) {
 
   chrome.tabs.get(tab.id, function () {
 
@@ -24,14 +22,49 @@ function updateTabInfo(tab, badgeColor, badgeText, infoObject) {
     } else {
 
       // Tab exists
-      chrome.browserAction.setBadgeBackgroundColor({ color: badgeColor, tabId: tab.id });
-      chrome.browserAction.setBadgeText({ text: badgeText, tabId: tab.id });
+      updateBadge(tab, infoObject);
 
       // Save info in hashmap, and send it to the popup if it's open
       tabHashmap.set(tab.id, infoObject);
       chrome.runtime.sendMessage({ type: "updateFromBackground", data: infoObject });
     }
   });
+}
+
+function updateBadge(tab, info) {
+
+  let color = "rgb(194, 25, 25)";
+  let text = "???";
+
+  try {
+    console.log(tab.id + " " + JSON.stringify(info));
+    switch (info.status) {
+      case "downloaded":
+        text = "✔";
+        color = "rgb(25, 194, 48)";
+        break;
+      case "downloading":
+        text = "#" + info.jobId;
+        color = "rgb(64, 124, 255)";
+        break;
+      case "checking":
+        text = "...";
+        color = "rgb(255, 174, 0)";
+        break;
+      case "error":
+        text = "ERR";
+        color = "rgb(194, 25, 25)";
+        break;
+      case "other":
+        text = "X";
+        color = "rgb(54, 57, 64)";
+        break;
+    }
+  } catch (e) { console.log(e); }
+
+  console.log(color + text);
+  chrome.browserAction.setBadgeBackgroundColor({ color: color, tabId: tab.id });
+  chrome.browserAction.setBadgeText({ text: text, tabId: tab.id });
 }
 
 /**
@@ -43,10 +76,10 @@ function updateTabInfo(tab, badgeColor, badgeText, infoObject) {
  */
 function checkUrl(serverUrl, apiKey, tab) {
 
-  updateTabInfo(tab, "rgb(255,174,0)", "...", { status: "checking", message: "Asking the server..." });
+  updateTabInfo(tab, { status: "checking" });
 
   if (tab.url === undefined) {
-    updateTabInfo(tab, "rgb(54, 57, 64)", "???", { status: "other", message: "Not a downloadable URL. " });
+    updateTabInfo(tab, { status: "other", message: "Not a downloadable URL. " });
     return;
   }
 
@@ -58,13 +91,13 @@ function checkUrl(serverUrl, apiKey, tab) {
     .then(response => response.json())
     .then((r) => {
       if (r.success === 1) {
-        updateTabInfo(tab, "rgb(25, 194, 48)", "✔", { status: "downloaded", arcId: r.data.id });
+        updateTabInfo(tab, { status: "downloaded", arcId: r.data.id });
       } else {
-        updateTabInfo(tab, "rgb(54, 57, 64)", "X", { status: "other", message: r.error });
+        updateTabInfo(tab, { status: "other", message: r.error });
       }
     })
     .catch(error => {
-      updateTabInfo(tab, "rgb(194,25,25)", "ERR", { status: "other", message: error });
+      updateTabInfo(tab, { status: "error", message: error });
       showNotification("Error while checking URL :", error);
     });
 
@@ -85,7 +118,7 @@ function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
     .then((data) => {
       if (data.success) {
 
-        updateTabInfo(tab, "rgb(64,124,255)", "#" + data.job, { status: "downloading", jobId: data.job });
+        updateTabInfo(tab, { status: "downloading", jobId: data.job });
         showNotification(`Download for ${tab.url}`, `Queued as job #${data.job}!`);
 
         // Check minion job state periodically to update the result 
@@ -102,9 +135,9 @@ function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
 function handleDownloadResult(tab, data) {
 
   if (data.success === 1) {
-    updateTabInfo(tab, "rgb(25, 194, 48)", "✔", { status: "downloaded", arcId: data.id });
+    updateTabInfo(tab, { status: "downloaded", arcId: data.id });
   } else {
-    updateTabInfo(tab, "rgb(54, 57, 64)", "X", { status: "other", message: data.message });
+    updateTabInfo(tab, { status: "error", message: data.message });
     showNotification(`Download for ${tab.url}`, `Failed: ${data.message}`);
   }
 }
@@ -116,7 +149,11 @@ chrome.runtime.onInstalled.addListener(function () {
 
   chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (changeInfo.url) {
+      tabHashmap.delete(tabId);
       onNewUrl(tab);
+    } else if (changeInfo.status && tabHashmap.has(tabId)) {
+      // Per-tab badges go away when the tab is refreshed, so we put 'em back
+      updateBadge(tab, tabHashmap.get(tabId));
     }
   });
 
@@ -158,11 +195,10 @@ function onNewUrl(tab) {
   // If the tab already has a browserAction, we do nothing
   if (!tabHashmap.has(tab.id))
     chrome.storage.sync.get(['server', 'api'], function (result) {
-
       if (typeof result.server !== 'undefined') // check for undefined
         checkUrl(result.server, result.api, tab);
       else
-        updateTabInfo(tab, "rgb(54, 57, 64)", "NC", { status: "other", message: "Please setup your server settings." });
+        updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
     });
 }
 

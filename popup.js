@@ -42,33 +42,47 @@ function updatePopup(dataFromBackground) {
   console.log("Received data from background.js: " + JSON.stringify(dataFromBackground));
   document.getElementById('statusMsg').style = "color:black"
 
-  switch (dataFromBackground.status) {
-    case "downloaded":
-      document.getElementById('statusIcon').textContent = "✅";
-      document.getElementById('statusMsg').textContent = " saved to your LRR server!";
-      document.getElementById('statusMsg').style = "color:green"
-      document.getElementById('statusDetail').textContent = `(id: ${dataFromBackground.arcId})`;
-      break;
-    case "downloading":
-      document.getElementById('statusIcon').textContent = "🔜";
-      document.getElementById('statusMsg').textContent = " being downloaded...";
-      document.getElementById('statusMsg').style = "color:blue"
-      document.getElementById('statusDetail').textContent = `(job: #${dataFromBackground.jobId})`;
-      break;
-    case "checking":
-      document.getElementById('statusIcon').textContent = "⌛";
-      document.getElementById('statusMsg').textContent = " being checked...";
-      document.getElementById('statusMsg').style = "color:orange"
-      document.getElementById('statusDetail').textContent = `(Please wait warmly.)`;
-      break;
-    case "other":
-      document.getElementById('statusIcon').textContent = "⁉";
-      document.getElementById('statusMsg').textContent = "... just a tab.";
-      document.getElementById('statusDetail').textContent = `(${dataFromBackground.message})`;
-      break;
-    default:
-      document.getElementById('statusIcon').textContent = "❌";
-      document.getElementById('statusMsg').textContent = " we just don't know.";
-      document.getElementById('statusDetail').textContent = `(Unknown status message ${dataFromBackground.status})`;
+  try {
+    switch (dataFromBackground.status) {
+      case "downloaded":
+        document.getElementById('statusIcon').textContent = "✅";
+        document.getElementById('statusMsg').textContent = " saved to your LRR server!";
+        document.getElementById('statusMsg').style = "color:green"
+        document.getElementById('statusDetail').textContent = `(id: ${dataFromBackground.arcId})`;
+        break;
+      case "downloading":
+        document.getElementById('statusIcon').textContent = "🔜";
+        document.getElementById('statusMsg').textContent = " being downloaded...";
+        document.getElementById('statusMsg').style = "color:blue"
+        document.getElementById('statusDetail').textContent = `(job: #${dataFromBackground.jobId})`;
+        break;
+      case "checking":
+        document.getElementById('statusIcon').textContent = "⌛";
+        document.getElementById('statusMsg').textContent = " being checked...";
+        document.getElementById('statusMsg').style = "color:orange"
+        document.getElementById('statusDetail').textContent = `(Please wait warmly.)`;
+        break;
+      case "other":
+        document.getElementById('statusIcon').textContent = "⁉";
+        document.getElementById('statusMsg').textContent = "... just a tab.";
+        document.getElementById('statusDetail').textContent = `(${dataFromBackground.message})`;
+        break;
+      case "error":
+        document.getElementById('statusIcon').textContent = "❌";
+        document.getElementById('statusMsg').textContent = " not okay.";
+        document.getElementById('statusMsg').style = "color:red"
+        document.getElementById('statusDetail').textContent = `(Error: ${dataFromBackground.message})`;
+        break;
+      default:
+        document.getElementById('statusIcon').textContent = "👻";
+        document.getElementById('statusMsg').textContent = " a mystery.";
+        document.getElementById('statusDetail').textContent = `(Unknown status message ${dataFromBackground.status})`;
+    }
+  } catch (e) {
+    console.log(e);
+    document.getElementById('statusIcon').textContent = "👻";
+    document.getElementById('statusMsg').textContent = " a mystery.";
+    document.getElementById('statusDetail').textContent = `(${e})`;
   }
+
 }
