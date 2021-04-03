@@ -1,0 +1,37 @@
+on: 
+  push:
+    branches:
+    - main
+name: Continuous Delivery 
+jobs:
+
+  signXpiForFirefox:
+    name: Upload and sign .xpi on AMO
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+    - name: "web-ext build"
+      id: web-ext-build
+      uses: kewisch/action-web-ext@v1
+      with:
+        cmd: build
+        source: .
+
+    - name: "web-ext sign"
+      id: web-ext-sign
+      uses: kewisch/action-web-ext@v1
+      with:
+        cmd: sign
+        source: ${{ steps.web-ext-build.outputs.target }}
+        channel: unlisted
+        apiKey: ${{ secrets.AMO_SIGN_KEY }}
+        apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+        timeout: 900000
+
+    - name: "Create Release"
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ${{ steps.web-ext-sign.outputs.target }}

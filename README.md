@@ -48,5 +48,5 @@ extension signing requirement, see [here](https://wiki.mozilla.org/Add-ons/Exten
 2. Make sure to also check "Enable CORS for the Client API" while you're in Settings
 3. Open the extension's options page
 4. Key in the server's URL (with scheme) and API Key, press the "Check Server" button to verify that the extension connects properly
-5. (Optional) Add a Category ID to associate downloaded URLs to. For the time being you need to get category IDs manually, sorry! 🙇‍♂️
+5. Add a Category to associate downloaded URLs to. Categories are pulled from your server when you press the "Check Server" button.  
 6. Save the extension settings and you're good to go!
