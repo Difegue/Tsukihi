@@ -1,8 +1,7 @@
 on: 
-  push:
-    branches:
-    - main
-name: Continuous Delivery 
+  release:
+    types: [published]
+name: Create FF .xpi and upload/sign it
 jobs:
 
   signXpiForFirefox:
@@ -29,9 +28,9 @@ jobs:
         apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
         timeout: 900000
 
-    - name: "Create Release"
-      uses: softprops/action-gh-release@v1
+    - name: Upload Installer to release
+      uses: JasonEtco/upload-to-release@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: ${{ steps.web-ext-sign.outputs.target }}
+        args: ${{ steps.web-ext-sign.outputs.target }} application/octet-stream
