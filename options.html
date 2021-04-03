@@ -68,7 +68,12 @@
     <tr>
       <td>Downloaded URLs will be <br>added to this Category:</td>
       <td>
-        <input type="text" id="catid" name="catid" />
+        <select id="category">
+          <option disabled selected value> -- No Category -- </option>
+        </select>
+        <br>
+        <span id="categoryErr"></span>
+        <input type="text" id="catid" name="catid" style="display:none" />
       </td>
     </tr>
   </table>
