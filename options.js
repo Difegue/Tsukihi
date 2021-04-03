@@ -43,6 +43,7 @@ function checkServer() {
         throw new Error(data.error);
 
       serverInfo = `✅ "${data.name}", Version ${data.version}.`;
+      document.getElementById('saveBtn').disabled = false;
     })
     .catch(error => { serverInfo = `❌ ${error}` })
     .finally(() => document.getElementById('serverMsg').textContent = serverInfo);
@@ -75,12 +76,16 @@ function checkServer() {
       // Add default
       catCombobox.options[catCombobox.options.length] = new Option("-- No Category --", "", true, false);
 
-      // Add categories, select if the ID matches the optional argument
+      // Add static categories, select if the ID matches the one we saved
       data.forEach(c => {
-        catCombobox.options[catCombobox.options.length] = new Option(c.name, c.id, false, c.id === selectedID);
+        if (c.search === "") {
+          catCombobox.options[catCombobox.options.length] = new Option(c.name, c.id, false, c.id === selectedID);
+        }
       });
 
-    }).catch(error => document.getElementById('categoryErr').textContent = error);
+      document.getElementById('categoryErr').textContent = "✅ Pulled categories from server correctly.";
+
+    }).catch(error => document.getElementById('categoryErr').textContent = `🛑 ${error}`);
 }
 
 function updateCategoryDetails() {
