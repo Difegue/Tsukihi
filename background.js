@@ -106,7 +106,8 @@ function checkUrl(serverUrl, apiKey, tab) {
     })
     .catch(error => {
       updateTabInfo(tab, { status: "error", message: error.toString() });
-      showNotification("Error while checking URL :", error.toString());
+      // Turn this on for debug notifications
+      //showNotification("Error while checking URL :", error.toString());
     });
 
 }
@@ -212,6 +213,8 @@ function handleDownloadResult(tab, data) {
 
   if (data.success === 1) {
     updateTabInfo(tab, { status: "downloaded", arcId: data.id });
+    showNotification(`Download of ${tab.url} complete!`, 
+      `File has been saved to your server and given the ID ${data.id}`);
   } else {
     updateTabInfo(tab, { status: "error", message: data.message });
     showNotification(`Download for ${tab.url}`, `Failed: ${data.message}`);
