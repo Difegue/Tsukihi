@@ -58,21 +58,34 @@ chrome.runtime.onMessage.addListener(
     // Reverify tab req
     if (request.type == "recheckTab") {
       tabHashmap.delete(request.tab.id);
-      onNewUrl(request.tab);
+      onNewUrl(request.tab, true);
     }
 
   });
 
 
-function onNewUrl(tab) {
+function onNewUrl(tab, bypassRegexes = false) {
   // If the tab already has a browserAction, we do nothing
   if (!tabHashmap.has(tab.id))
-    chrome.storage.sync.get(['server', 'api'], function (result) {
+    chrome.storage.sync.get(['server', 'api', 'supportedURLs'], function (result) {
       if (typeof result.server !== 'undefined' && result.server.trim() !== "") // check for undefined
-        checkUrl(result.server.trim(), result.api, tab);
+        if (bypassRegexes || isUrlSupported(tab, result.supportedURLs))
+          checkUrl(result.server.trim(), result.api, tab);
+        else
+          updateTabInfo(tab, { status: "other", message: "This website is not supported for downloading. But you can still try it!" });
       else
         updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
     });
+}
+
+function isUrlSupported(tab, urlRegexes) {
+  
+  if (typeof urlRegexes === 'undefined' || tab.url === undefined) return false;
+
+  urlRegexes = urlRegexes.map(s => new RegExp(s));
+  let checks = urlRegexes.map(regex => regex.test(tab.url));
+
+  return (checks.includes(true));
 }
 
 /**

@@ -3,6 +3,8 @@
 
 'use strict';
 
+let supportedUrls = [];
+
 function getAuthHeader(apiKey) {
   return { Authorization: "Bearer " + btoa(apiKey) };
 }
@@ -18,7 +20,8 @@ function updateSettings() {
   chrome.storage.sync.set({
     server: server.value,
     api: key.value,
-    categoryID: catid.value
+    categoryID: catid.value,
+    supportedURLs: supportedUrls
   }, function () {
     status.textContent = "👌 Saved!"
   });
@@ -33,6 +36,7 @@ function checkServer() {
 
   let serverInfo = "";
   let apiCheck = "";
+  let urlRegexText = "";
 
   // Test base server connectivity
   fetch(`${server.value}/api/info`, { method: "GET", headers: getAuthHeader(key.value) })
@@ -48,8 +52,8 @@ function checkServer() {
     .catch(error => { serverInfo = `❌ ${error}` })
     .finally(() => document.getElementById('serverMsg').textContent = serverInfo);
 
-  // Test authenticated endpoint
-  fetch(`${server.value}/api/plugins/test`, { method: "GET", headers: getAuthHeader(key.value) })
+  // Test authenticated endpoint by getting Download plugins
+  fetch(`${server.value}/api/plugins/download`, { method: "GET", headers: getAuthHeader(key.value) })
     .then(response => response.ok ? response.json() : { error: "API Key seems to be invalid!" })
     .then((data) => {
 
@@ -57,9 +61,16 @@ function checkServer() {
         throw new Error(data.error);
 
       apiCheck = `✅ API Key is valid.`;
+
+      supportedUrls = data.map(plug => plug.url_regex)
+      urlRegexText = supportedUrls.join('\r\n');
+      
     })
-    .catch(error => { apiCheck = `🛑 ${error}` })
-    .finally(() => document.getElementById('apiCheck').textContent = apiCheck);
+    .catch(error => { apiCheck = urlRegexText = `🛑 ${error}` })
+    .finally(() => {
+      document.getElementById('apiCheck').textContent = apiCheck;
+      document.getElementById('urlRegexes').textContent = urlRegexText;
+    });
 
   // Get categories from the server 
   document.getElementById('categoryErr').textContent = "";
