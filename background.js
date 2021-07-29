@@ -72,7 +72,7 @@ function onNewUrl(tab, bypassRegexes = false) {
         if (bypassRegexes || isUrlSupported(tab, result.supportedURLs))
           checkUrl(result.server.trim(), result.api, tab);
         else
-          updateTabInfo(tab, { status: "other", message: "This website is not supported for downloading. But you can still try it!" });
+          updateTabInfo(tab, { status: "other", message: "This website is not supported for downloading.\nBut you can still try it!" });
       else
         updateTabInfo(tab, { status: "other", message: "Please setup your server settings." });
     });
