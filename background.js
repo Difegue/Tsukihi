@@ -228,6 +228,12 @@ function handleDownloadResult(tab, data) {
     updateTabInfo(tab, { status: "downloaded", arcId: data.id });
     showNotification(`Download of ${tab.url} complete!`, 
       `File has been saved to your server and given the ID ${data.id}`);
+
+    chrome.storage.sync.get(['closeOnDL'], function (result) {
+        if (result.closeOnDL) 
+          tabs.remove(tab.id);
+    });
+
   } else {
     updateTabInfo(tab, { status: "error", message: data.message });
     showNotification(`Download for ${tab.url}`, `Failed: ${data.message}`);

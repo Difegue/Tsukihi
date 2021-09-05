@@ -14,6 +14,7 @@ function updateSettings() {
   let server = document.getElementById('server');
   let key = document.getElementById('key');
   let catid = document.getElementById('catid');
+  let closecheckbox = document.getElementById('closeOnDL');
 
   let status = document.getElementById('statusMsg');
 
@@ -21,7 +22,8 @@ function updateSettings() {
     server: server.value,
     api: key.value,
     categoryID: catid.value,
-    supportedURLs: supportedUrls
+    supportedURLs: supportedUrls,
+    closeOnDL: closecheckbox.value
   }, function () {
     status.textContent = "👌 Saved!"
   });
