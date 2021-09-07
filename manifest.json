@@ -1,6 +1,6 @@
 {
   "name": "Tsukihi",
-  "version": "1.0",
+  "version": "1.01",
   "description": "Send URLs to your LANraragi server for downloading! 🐦",
   "permissions": [
     "activeTab",
