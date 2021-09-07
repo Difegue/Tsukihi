@@ -231,7 +231,7 @@ function handleDownloadResult(tab, data) {
 
     chrome.storage.sync.get(['closeOnDL'], function (result) {
         if (result.closeOnDL) 
-          tabs.remove(tab.id);
+          chrome.tabs.remove(tab.id);
     });
 
   } else {

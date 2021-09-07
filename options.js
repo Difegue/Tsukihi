@@ -23,7 +23,7 @@ function updateSettings() {
     api: key.value,
     categoryID: catid.value,
     supportedURLs: supportedUrls,
-    closeOnDL: closecheckbox.value
+    closeOnDL: closecheckbox.checked
   }, function () {
     status.textContent = "👌 Saved!"
   });
@@ -39,6 +39,8 @@ function checkServer() {
   let serverInfo = "";
   let apiCheck = "";
   let urlRegexText = "";
+
+  document.getElementById('apiCheck').textContent = "⌛ Checking...";
 
   // Test base server connectivity
   fetch(`${server.value}/api/info`, { method: "GET", headers: getAuthHeader(key.value) })
@@ -116,10 +118,11 @@ button = document.getElementById('category');
 button.addEventListener('change', updateCategoryDetails);
 
 // Prefill fields with settings
-chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
+chrome.storage.sync.get(['server', 'api', 'categoryID', 'closeOnDL'], function (result) {
   document.getElementById('server').value = result.server ?? "";
   document.getElementById('key').value = result.api ?? "";
   document.getElementById('catid').value = result.categoryID ?? "";
+  document.getElementById('closeOnDL').checked = result.closeOnDL ?? false;
 
   checkServer();
 });
