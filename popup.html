@@ -10,10 +10,10 @@
       background-repeat: no-repeat;
       background-position: bottom left;
       width: 318px;
-      height: 250px;
       text-align: center;
       background-size: 40%;
       font-size: 12px;
+      overflow-x: hidden;
     }
 
     button {
@@ -22,6 +22,10 @@
       margin-bottom: 8px;
       margin-left: 128px;
       font-size: 13px;
+    }
+
+    .status-detail {
+      white-space: pre-line;
     }
 
     .recheck-link {
@@ -48,7 +52,7 @@
     <a href="#" id="recheckTab" title="Ask the server for this Tab again." class="recheck-link">Recheck?</a>
 
     <div style="font-weight: 600; font-size: 18px;">This tab is<span id="statusMsg"></span></div>
-    <span id="statusDetail">The status message goes here.</span>
+    <span id="statusDetail" class="status-detail">The status message goes here.</span>
 
     <hr>
 
