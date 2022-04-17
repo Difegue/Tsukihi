@@ -268,7 +268,7 @@ function showNotification(title, msg) {
 */
 function checkJobStatus(serverUrl, apiKey, jobId, callback, failureCallback) {
 
-  fetch(`${serverUrl}/api/minion/${jobId}`, { method: "GET", headers: getAuthHeader(apiKey) })
+  fetch(`${serverUrl}/api/minion/${jobId}/detail`, { method: "GET", headers: getAuthHeader(apiKey) })
     .then(response => response.ok ? response.json() : { success: 0, error: "Response was not OK" })
     .then((data) => {
 
