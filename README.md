@@ -37,7 +37,7 @@ If you use Chrome, it will probably nag you about using an unpacked extension no
 0. A nightly/developer or unbranded edition of Firefox is required, since otherwise there is no way to install unsigned addons (fuck you, Mozilla!). Unbranded builds are the same as regular Firefox except for the lack of branding and that you can disable the
 extension signing requirement, see [here](https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds)
 1. Clone this repo
-2. Zip the contents of the hydrus-companion directory (but not the directory itself!) and change the extension of the zip file to xpi
+2. Zip the contents of the Tsukihi directory (but not the directory itself!) and change the extension of the zip file to xpi
 3. Set xpinstall.signatures.required to false in Firefox about:config
 4. Go to the extensions page and use the 'load extension from file' option to load the xpi
 5. Do the basic setup procedure to connect the extension to LANraragi (see below)
