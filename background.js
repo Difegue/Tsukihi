@@ -41,9 +41,10 @@ chrome.runtime.onMessage.addListener(
       chrome.storage.sync.get(['server', 'api', 'categoryID'], function (result) {
 
         request.tabs?.forEach(tab => {
-          sendDownloadRequest(tab, result.server, result.api, result.categoryID);
+          sendDownloadRequest(tab, result.server, result.api, result.categoryID, true);
         });
 
+        showNotification("Batch Download", `Queued ${request.tabs.length} URLs for download!`);
       });
     }
 
@@ -193,7 +194,7 @@ function updateBadge(tab, info) {
 }
 
 // Send URLs to the Download API and add a checkJobStatus to track its progress.
-function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
+function sendDownloadRequest(tab, serverUrl, apiKey, categoryID, isBatch = false) {
 
   if (tab.url === undefined) {
     updateTabInfo(tab, { status: "other", message: "Not a downloadable URL. " });
@@ -213,7 +214,9 @@ function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
       if (data.success) {
 
         updateTabInfo(tab, { status: "downloading", jobId: data.job });
-        showNotification(`Download for ${tab.url}`, `Queued as job #${data.job}!`);
+
+        if (!isBatch)
+          showNotification(`Download for ${tab.url}`, `Queued as job #${data.job}!`);
 
         // Check minion job state periodically to update the result 
         checkJobStatus(serverUrl, apiKey, data.job,
@@ -223,7 +226,7 @@ function sendDownloadRequest(tab, serverUrl, apiKey, categoryID) {
         throw new Error(data.message);
       }
     })
-    .catch(error => showNotification("Error while queuing your Download", error.toString()));
+    .catch(error => showNotification(`Error while queuing ${tab.url}`, error.toString()));
 }
 
 function handleDownloadResult(tab, data) {
