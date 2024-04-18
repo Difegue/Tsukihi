@@ -5,12 +5,16 @@
 
 let tabHashmap = new Map();
 
+// Chrome bullshit to keep the extension alive
+const keepAlive = setInterval(chrome.runtime.getPlatformInfo, 25 * 1000);
+
 /**
  * Setup on extension init.
  */
 
 chrome.runtime.onInstalled.addListener(function () {
   chrome.runtime.openOptionsPage();
+  chrome.permissions.request({ origins: ["https://*/","http://*/"] });
 });
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -184,8 +188,8 @@ function updateBadge(tab, info) {
   } catch (e) { console.log(e); }
 
   console.log(color + text);
-  chrome.browserAction.setBadgeBackgroundColor({ color: color, tabId: tab.id });
-  chrome.browserAction.setBadgeText({ text: text, tabId: tab.id });
+  chrome.action.setBadgeBackgroundColor({ color: color, tabId: tab.id });
+  chrome.action.setBadgeText({ text: text, tabId: tab.id });
 }
 
 // Send URLs to the Download API and add a checkJobStatus to track its progress.
