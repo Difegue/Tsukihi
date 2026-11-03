@@ -4,129 +4,399 @@
 'use strict';
 
 let supportedUrls = [];
+let settingsLoaded = false;
+let toastTimer = null;
+let currentLanguage = TSUKIHI_DEFAULT_LANGUAGE;
 
-function getAuthHeader(apiKey) {
-  return { Authorization: "Bearer " + btoa(apiKey) };
-}
+const refs = {
+  form: document.getElementById('settingsForm'),
+  server: document.getElementById('server'),
+  key: document.getElementById('key'),
+  category: document.getElementById('category'),
+  catid: document.getElementById('catid'),
+  closeOnDL: document.getElementById('closeOnDL'),
+  enableQB: document.getElementById('enableQB'),
+  qbServer: document.getElementById('qbServer'),
+  qbApiKey: document.getElementById('qbApiKey'),
+  qbUsername: document.getElementById('qbUsername'),
+  qbPassword: document.getElementById('qbPassword'),
+  qbPath: document.getElementById('qbPath'),
+  serverMsg: document.getElementById('serverMsg'),
+  apiCheck: document.getElementById('apiCheck'),
+  categoryErr: document.getElementById('categoryErr'),
+  qbStatusMsg: document.getElementById('qbStatusMsg'),
+  serverDot: document.getElementById('serverDot'),
+  qbDot: document.getElementById('qbDot'),
+  statusMsg: document.getElementById('statusMsg'),
+  urlRegexes: document.getElementById('urlRegexes'),
+  shortcutList: document.getElementById('shortcutList'),
+  languageSelect: document.getElementById('languageSelect'),
+  toast: document.getElementById('toast')
+};
 
-function updateSettings() {
+initialize();
 
-  let server = document.getElementById('server');
-  let key = document.getElementById('key');
-  let catid = document.getElementById('catid');
-  let closecheckbox = document.getElementById('closeOnDL');
-
-  let status = document.getElementById('statusMsg');
-
-  chrome.storage.sync.set({
-    server: server.value,
-    api: key.value,
-    categoryID: catid.value,
-    supportedURLs: supportedUrls,
-    closeOnDL: closecheckbox.checked
-  }, function () {
-    status.textContent = "👌 Saved!"
+async function initialize() {
+  document.getElementById('versionInfo').textContent = chrome.runtime.getManifest().version;
+  currentLanguage = await tsukihiGetLanguage();
+  refs.languageSelect.value = currentLanguage;
+  tsukihiApplyPageTranslations(currentLanguage);
+  tsukihiBindLanguageSelect(refs.languageSelect, async (language) => {
+    await applyLanguage(language);
+  });
+  tsukihiWatchLanguage((language) => {
+    if (language === currentLanguage) return;
+    applyLanguage(language);
   });
 
+  refs.form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveSettings();
+  });
+  refs.form.addEventListener('input', markDirty);
+  refs.form.addEventListener('change', markDirty);
+  document.getElementById('checkBtn').addEventListener('click', checkServer);
+  document.getElementById('checkQBBtn').addEventListener('click', checkQBConnection);
+  refs.category.addEventListener('change', updateCategoryDetails);
+  document.getElementById('openDownloadCenter').addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('downloads.html') });
+  });
+
+  await loadSettings();
+  await loadShortcuts();
 }
 
-function checkServer() {
+function t(key, variables = {}) {
+  return tsukihiTranslate(currentLanguage, key, variables);
+}
 
-  let server = document.getElementById('server');
-  let key = document.getElementById('key');
-  let selectedID = document.getElementById('catid').value;
+async function applyLanguage(language) {
+  currentLanguage = language;
+  refs.languageSelect.value = language;
+  tsukihiApplyPageTranslations(language);
+  await loadShortcuts();
+  if (!settingsLoaded) return;
 
-  let serverInfo = "";
-  let apiCheck = "";
-  let urlRegexText = "";
+  if (refs.server.value.trim()) {
+    checkServer({ automatic: true });
+  } else {
+    setConnectionState('server', 'neutral');
+    setInlineStatus(refs.serverMsg, t('options.waitingServer'), '');
+    setInlineStatus(refs.apiCheck, '', '');
+    refs.categoryErr.textContent = t('options.categoryHint');
+    refs.categoryErr.dataset.tone = '';
+  }
 
-  document.getElementById('apiCheck').textContent = "⌛ Checking...";
+  if (refs.qbServer.value.trim() && (refs.qbApiKey.value || refs.qbUsername.value || refs.qbPassword.value)) {
+    checkQBConnection({ automatic: true });
+  } else {
+    setConnectionState('qb', 'neutral');
+    setInlineStatus(refs.qbStatusMsg, t('options.waitingAuth'), '');
+  }
+}
 
-  // Test base server connectivity
-  fetch(`${server.value}/api/info`, { method: "GET", headers: getAuthHeader(key.value) })
-    .then(response => response.ok ? response.json() : { error: "Server didn't reply." })
-    .then((data) => {
+async function loadSettings() {
+  const result = await storageSyncGet([
+    'server',
+    'api',
+    'categoryID',
+    'supportedURLs',
+    'closeOnDL',
+    'enableQB',
+    'qbServer',
+    'qbApiKey',
+    'qbUsername',
+    'qbPassword',
+    'qbPath'
+  ]);
 
-      if (data.error)
-        throw new Error(data.error);
+  refs.server.value = result.server || '';
+  refs.key.value = result.api || '';
+  refs.catid.value = result.categoryID || '';
+  refs.closeOnDL.checked = Boolean(result.closeOnDL);
+  refs.enableQB.checked = result.enableQB !== false;
+  refs.qbServer.value = result.qbServer || '';
+  refs.qbApiKey.value = result.qbApiKey || '';
+  refs.qbUsername.value = result.qbUsername || 'admin';
+  refs.qbPassword.value = result.qbPassword || '';
+  refs.qbPath.value = result.qbPath || '';
+  supportedUrls = Array.isArray(result.supportedURLs) ? result.supportedURLs : [];
+  refs.urlRegexes.textContent = supportedUrls.length
+    ? supportedUrls.join('\n')
+    : t('options.loadAfterConnect');
 
-      serverInfo = `✅ "${data.name}", Version ${data.version}.`;
-      document.getElementById('saveBtn').disabled = false;
-    })
-    .catch(error => { serverInfo = `❌ ${error}` })
-    .finally(() => document.getElementById('serverMsg').textContent = serverInfo);
+  settingsLoaded = true;
+  refs.statusMsg.textContent = t('options.saveLoaded');
 
-  // Test authenticated endpoint by getting Download plugins
-  fetch(`${server.value}/api/plugins/download`, { method: "GET", headers: getAuthHeader(key.value) })
-    .then(response => response.ok ? response.json() : { error: "API Key seems to be invalid!" })
-    .then((data) => {
+  if (refs.server.value.trim()) {
+    checkServer({ automatic: true });
+  } else {
+    setConnectionState('server', 'neutral');
+    setInlineStatus(refs.serverMsg, t('options.waitingServer'), '');
+  }
 
-      if (data.error)
-        throw new Error(data.error);
+  if (refs.qbServer.value.trim() && (refs.qbApiKey.value || refs.qbUsername.value || refs.qbPassword.value)) {
+    checkQBConnection({ automatic: true });
+  } else {
+    setConnectionState('qb', 'neutral');
+    setInlineStatus(refs.qbStatusMsg, t('options.waitingAuth'), '');
+  }
+}
 
-      apiCheck = `✅ API Key is valid.`;
+async function saveSettings() {
+  refs.statusMsg.textContent = t('options.saving');
 
-      supportedUrls = data.map(plug => plug.url_regex)
-      urlRegexText = supportedUrls.join('\r\n');
-      
-    })
-    .catch(error => { apiCheck = urlRegexText = `🛑 ${error}` })
-    .finally(() => {
-      document.getElementById('apiCheck').textContent = apiCheck;
-      document.getElementById('urlRegexes').textContent = urlRegexText;
+  try {
+    await storageSyncSet({
+      server: refs.server.value.trim().replace(/\/+$/, ''),
+      api: refs.key.value,
+      categoryID: refs.category.value || refs.catid.value || '',
+      supportedURLs: supportedUrls,
+      closeOnDL: refs.closeOnDL.checked,
+      enableQB: refs.enableQB.checked,
+      qbServer: refs.qbServer.value.trim().replace(/\/+$/, ''),
+      qbApiKey: refs.qbApiKey.value.trim(),
+      qbUsername: refs.qbUsername.value.trim(),
+      qbPassword: refs.qbPassword.value,
+      qbPath: refs.qbPath.value.trim()
     });
 
-  // Get categories from the server 
-  document.getElementById('categoryErr').textContent = "";
-  fetch(`${server.value}/api/categories`, { method: "GET", headers: getAuthHeader(key.value) })
-    .then(response => response.ok ? response.json() : { error: "API Key seems to be invalid!" })
-    .then((data) => {
+    refs.catid.value = refs.category.value || refs.catid.value || '';
+    refs.statusMsg.textContent = t('options.savedAt', { time: new Date().toLocaleTimeString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' }) });
+    showToast(t('options.savedToast'));
+  } catch (error) {
+    refs.statusMsg.textContent = t('options.saveFailed', { error: error.message || error });
+  }
+}
 
-      if (data.error)
-        throw new Error(data.error);
+async function checkServer(options = {}) {
+  const server = refs.server.value.trim().replace(/\/+$/, '');
+  const apiKey = refs.key.value;
+  const selectedID = refs.catid.value || refs.category.value;
 
-      // Clear combobox and fill it again with categories from the API
-      const catCombobox = document.getElementById('category');
-      catCombobox.options.length = 0;
-      // Add default
-      catCombobox.options[catCombobox.options.length] = new Option("-- No Category --", "", true, false);
+  if (!server) {
+    setConnectionState('server', 'neutral');
+    setInlineStatus(refs.serverMsg, t('options.lrrNoServer'), 'danger');
+    return;
+  }
 
-      // Add static categories, select if the ID matches the one we saved
-      data.forEach(c => {
-        if (c.search === "") {
-          catCombobox.options[catCombobox.options.length] = new Option(c.name, c.id, false, c.id === selectedID);
-        }
-      });
+  setConnectionState('server', 'checking');
+  setInlineStatus(refs.serverMsg, options.automatic ? t('options.checkingAuto') : t('options.checking'), '');
+  setInlineStatus(refs.apiCheck, t('options.validatingKey'), '');
+  refs.categoryErr.textContent = t('options.readingCategories');
+  refs.categoryErr.dataset.tone = '';
 
-      document.getElementById('categoryErr').textContent = "✅ Pulled categories from server correctly.";
+  try {
+    const headers = getAuthHeader(apiKey);
+    const [info, plugins, categories] = await Promise.all([
+      fetchJson(`${server}/api/info`, { headers }),
+      fetchJson(`${server}/api/plugins/download`, { headers }),
+      fetchJson(`${server}/api/categories`, { headers })
+    ]);
 
-    }).catch(error => document.getElementById('categoryErr').textContent = `🛑 ${error}`);
+    if (!Array.isArray(plugins) || !Array.isArray(categories)) {
+      throw new Error(t('options.incompatibleData'));
+    }
+
+    setConnectionState('server', 'success');
+    setInlineStatus(refs.serverMsg, t('options.connected', { name: info.name || 'LANraragi', version: info.version || t('common.unknown') }), 'success');
+    setInlineStatus(refs.apiCheck, t('options.apiValid'), 'success');
+
+    supportedUrls = plugins.map((plugin) => plugin.url_regex).filter(Boolean);
+    refs.urlRegexes.textContent = supportedUrls.length
+      ? supportedUrls.join('\n')
+      : t('options.noUrlRules');
+
+    populateCategories(categories, selectedID);
+    refs.categoryErr.textContent = t('options.categoriesLoaded', { count: categories.filter((category) => category.search === '').length });
+    refs.categoryErr.dataset.tone = 'success';
+  } catch (error) {
+    setConnectionState('server', 'danger');
+    setInlineStatus(refs.serverMsg, t('options.connectionFailed', { error: error.message || error }), 'danger');
+    setInlineStatus(refs.apiCheck, t('options.connectionHelp'), 'danger');
+    refs.categoryErr.textContent = t('options.categoryLoadFailed');
+    refs.categoryErr.dataset.tone = 'danger';
+  }
+}
+
+function populateCategories(categories, selectedID) {
+  refs.category.options.length = 0;
+  refs.category.options[0] = new Option(t('options.noCategory'), '', true, false);
+
+  for (const category of categories) {
+    if (category.search !== '') continue;
+    refs.category.options[refs.category.options.length] = new Option(
+      category.name,
+      category.id,
+      false,
+      category.id === selectedID
+    );
+  }
+
+  const selectedOption = Array.from(refs.category.options).find((option) => option.value === selectedID);
+  if (selectedOption) refs.category.value = selectedID;
+  refs.catid.value = refs.category.value;
+}
+
+async function checkQBConnection(options = {}) {
+  const settings = {
+    qbServer: refs.qbServer.value.trim().replace(/\/+$/, ''),
+    qbApiKey: refs.qbApiKey.value.trim(),
+    qbUsername: refs.qbUsername.value.trim(),
+    qbPassword: refs.qbPassword.value
+  };
+
+  if (!settings.qbServer) {
+    setConnectionState('qb', 'neutral');
+    setInlineStatus(refs.qbStatusMsg, t('options.enterQBFirst'), 'danger');
+    return;
+  }
+  if (!settings.qbApiKey && !settings.qbUsername && !settings.qbPassword) {
+    setConnectionState('qb', 'neutral');
+    setInlineStatus(refs.qbStatusMsg, t('options.enterAuth'), 'danger');
+    return;
+  }
+
+  setConnectionState('qb', 'checking');
+  setInlineStatus(refs.qbStatusMsg, options.automatic ? t('options.testingQBAuto') : t('options.testingQB'), '');
+
+  try {
+    const result = await sendMessage({ type: 'testQBConnection', settings });
+    if (!result.ok) throw new Error(result.error || t('options.qbConnectionFailed'));
+
+    setConnectionState('qb', 'success');
+    const method = result.authMode === 'api-key' ? t('options.apiKeyMethod') : t('options.passwordMethod');
+    setInlineStatus(
+      refs.qbStatusMsg,
+      t('options.qbConnected', { method, version: result.version }) + (result.apiVersion ? ` · API ${result.apiVersion}` : ''),
+      'success'
+    );
+  } catch (error) {
+    setConnectionState('qb', 'danger');
+    setInlineStatus(refs.qbStatusMsg, t('options.connectionFailed', { error: error.message || error }), 'danger');
+  }
 }
 
 function updateCategoryDetails() {
-  const categoryID = document.getElementById('category').value;
-  document.getElementById('catid').value = categoryID;
+  refs.catid.value = refs.category.value;
 }
 
-let button = document.getElementById('saveBtn');
-button.addEventListener('click', updateSettings);
+function markDirty() {
+  if (!settingsLoaded) return;
+  refs.statusMsg.textContent = t('options.settingsDirty');
+}
 
-button = document.getElementById('checkBtn');
-button.addEventListener('click', checkServer);
+function setConnectionState(engine, tone) {
+  const dot = engine === 'qb' ? refs.qbDot : refs.serverDot;
+  dot.dataset.tone = tone;
+}
 
-button = document.getElementById('category');
-button.addEventListener('change', updateCategoryDetails);
+function setInlineStatus(element, message, tone) {
+  element.textContent = message;
+  element.dataset.tone = tone || '';
+}
 
-// Prefill fields with settings
-chrome.storage.sync.get(['server', 'api', 'categoryID', 'closeOnDL'], function (result) {
-  document.getElementById('server').value = result.server ?? "";
-  document.getElementById('key').value = result.api ?? "";
-  document.getElementById('catid').value = result.categoryID ?? "";
-  document.getElementById('closeOnDL').checked = result.closeOnDL ?? false;
+async function loadShortcuts() {
+  try {
+    const commands = await chromeCommandsGetAll();
+    const labels = {
+      'download-current-tab': t('options.shortcutDirect'),
+      'download-current-tab-qb': t('options.shortcutQB'),
+      'open-download-center': t('options.shortcutCenter')
+    };
 
-  checkServer();
-});
+    const rows = commands
+      .filter((command) => labels[command.name])
+      .map((command) => ({ label: labels[command.name], shortcut: command.shortcut || t('options.notSet') }));
 
-document.getElementById('versionInfo').textContent = chrome.runtime.getManifest().version;
+    if (rows.length === 0) return;
+    refs.shortcutList.replaceChildren();
+    for (const row of rows) {
+      const container = document.createElement('div');
+      container.className = 'shortcut-row';
 
+      const label = document.createElement('span');
+      label.textContent = row.label;
 
+      const key = document.createElement('kbd');
+      key.textContent = row.shortcut;
+
+      container.append(label, key);
+      refs.shortcutList.append(container);
+    }
+  } catch (error) {
+    console.warn('Could not load keyboard shortcuts:', error);
+  }
+}
+
+function getAuthHeader(apiKey) {
+  return { Authorization: `Bearer ${btoa(apiKey || '')}` };
+}
+
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+  const text = await response.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(t('options.invalidJson', { status: response.status }));
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error || data?.message || `HTTP ${response.status}`);
+  }
+
+  return data;
+}
+
+function sendMessage(message, timeoutMs = 30000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      settled = true;
+      reject(new Error(t('options.backgroundTimeout', { seconds: Math.round(timeoutMs / 1000) })));
+    }, timeoutMs);
+
+    try {
+      chrome.runtime.sendMessage(message, (response) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else if (!response) reject(new Error(t('options.backgroundNoResponse')));
+        else resolve(response);
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      reject(error);
+    }
+  });
+}
+
+function chromeCommandsGetAll() {
+  return new Promise((resolve) => {
+    chrome.commands.getAll((commands) => resolve(commands || []));
+  });
+}
+
+function storageSyncGet(keys) {
+  return new Promise((resolve) => chrome.storage.sync.get(keys, resolve));
+}
+
+function storageSyncSet(value) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.set(value, () => {
+      if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+      else resolve();
+    });
+  });
+}
+
+function showToast(message) {
+  clearTimeout(toastTimer);
+  refs.toast.textContent = message;
+  refs.toast.classList.add('is-visible');
+  toastTimer = setTimeout(() => refs.toast.classList.remove('is-visible'), 2600);
+}

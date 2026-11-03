@@ -1,66 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-i18n-document-title="popup.pageTitle">
 
 <head>
   <meta charset="utf-8">
-  <style>
-    body {
-      background: #F4F4F4;
-      background-image: url(./images/popup.png);
-      background-repeat: no-repeat;
-      background-position: bottom left;
-      width: 318px;
-      text-align: center;
-      background-size: 40%;
-      font-size: 12px;
-      overflow-x: hidden;
-    }
-
-    button {
-      width: 160px;
-      height: 32px;
-      margin-bottom: 8px;
-      margin-left: 128px;
-      font-size: 13px;
-    }
-
-    .status-detail {
-      white-space: pre-line;
-    }
-
-    .recheck-link {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-    }
-
-    .downloads-link {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tsukihi</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="popup.css">
 </head>
 
-<body>
+<body class="popup-body">
+  <main class="popup-shell">
+    <header class="popup-header">
+      <div class="brand">
+        <img class="brand-mark" src="images/get_started48.png" alt="">
+        <div>
+          <h1 class="brand-name">Tsukihi</h1>
+          <p class="brand-subtitle">LANraragi · qBittorrent</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <select class="language-select" id="languageSelect" aria-label="Language" data-i18n-aria-label="common.language">
+          <option value="en">EN</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="icon-button" id="openDownloads" type="button" title="Open download center" data-i18n-title="popup.openDownloads">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="icon-button" id="openSettings" type="button" title="Open settings" data-i18n-title="popup.openSettings">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9.7 3.7h4.6l.6 2.2c.5.2 1 .5 1.4.8l2.2-.7 2.3 4-1.6 1.6v1.6l1.6 1.6-2.3 4-2.2-.7c-.4.3-.9.6-1.4.8l-.6 2.2H9.7l-.6-2.2a8 8 0 0 1-1.4-.8l-2.2.7-2.3-4L4.8 13v-1.6L3.2 9.8l2.3-4 2.2.7c.4-.3.9-.6 1.4-.8l.6-2.2Z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.45"/>
+          </svg>
+        </button>
+      </div>
+    </header>
 
-  <div>
+    <section class="status-card" id="statusCard" data-tone="neutral">
+      <div class="status-orb" id="statusOrb" aria-hidden="true">
+        <span id="statusGlyph">…</span>
+      </div>
+      <div class="status-copy">
+        <div class="eyebrow">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span id="statusEyebrow" data-i18n="popup.currentPage">Current page</span>
+        </div>
+        <h2 id="statusTitle" data-i18n="popup.readingStatus">Reading status</h2>
+        <p id="statusDetail" data-i18n="popup.requestingInfo">Requesting information from the extension…</p>
+        <button class="inline-action" id="recheckTab" type="button" data-i18n="popup.recheck">Check this page again</button>
+      </div>
+    </section>
 
-    <div style="font-size:32px" id="statusIcon"></div>
-    <a href="#" id="allDownloads" title="This will open your LRR server's Minion Console." class="downloads-link">
-      All Downloads</a>
-    <a href="#" id="recheckTab" title="Ask the server for this Tab again." class="recheck-link">Recheck?</a>
+    <section class="qb-task-card hidden" id="qbTaskCard" data-state="waiting">
+      <div class="qb-card-head">
+        <div class="qb-identity">
+          <span class="qb-logo" aria-hidden="true">qB</span>
+          <div>
+            <span class="qb-kicker" data-i18n="popup.qbIndependentTask">qBittorrent task</span>
+            <strong id="qbTaskTitle" data-i18n="popup.fetchingTorrent">Fetching torrent</strong>
+          </div>
+        </div>
+        <strong class="qb-percent" id="qbPercent">0%</strong>
+      </div>
+      <div class="progress-track" id="qbProgressTrack">
+        <div class="progress-fill" id="qbProgressBar"></div>
+      </div>
+      <div class="qb-stats">
+        <span id="qbBytes" data-i18n="popup.waitingTorrentInfo">Waiting for torrent info</span>
+        <span id="qbSpeed">—</span>
+        <span id="qbEta">—</span>
+      </div>
+      <div class="qb-card-foot">
+        <span class="qb-acquisition" id="qbAcquisition" data-i18n="popup.qbFetchingTorrent">qBittorrent is fetching the torrent</span>
+        <button class="text-link" id="viewQBTask" type="button" data-i18n="popup.viewDetails">View details</button>
+      </div>
+    </section>
 
-    <div style="font-weight: 600; font-size: 18px;">This tab is<span id="statusMsg"></span></div>
-    <span id="statusDetail" class="status-detail">The status message goes here.</span>
+    <section class="primary-actions" aria-label="Download actions" data-i18n-aria-label="popup.downloadActions">
+      <button class="action-card action-direct" id="downloadUrl" type="button">
+        <span class="action-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 19.5h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="action-copy">
+          <strong data-i18n="popup.directDownload">Direct download to LANraragi</strong>
+          <small data-i18n="popup.directDownloadHint">Downloads the current page URL</small>
+        </span>
+        <span class="action-arrow" aria-hidden="true">→</span>
+      </button>
 
-    <hr>
+      <button class="action-card action-qb hidden" id="downloadToQB" type="button">
+        <span class="action-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 4.5h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 8v6m0 0 2.5-2.5M12 14l-2.5-2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="action-copy">
+          <strong data-i18n="popup.sendToQB">Send to qBittorrent</strong>
+          <small id="qbActionHint" data-i18n="popup.qbActionHint">Fetch the E-Hentai torrent</small>
+        </span>
+        <span class="action-arrow" aria-hidden="true">→</span>
+      </button>
+    </section>
 
-    <button id="downloadUrl" title="Queue this tab's URL for downloading on your LRR server.">Download this tab</button>
-    <button id="downloadLeft">Queue tabs on the left</button>
-    <button id="downloadRight">Queue tabs on the right</button>
-    <button id="openSettings">Open extension settings</button>
+    <section class="batch-card" id="batchCard">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker" data-i18n="popup.batch">Batch</span>
+          <strong data-i18n="popup.lrrQueue">LANraragi queue</strong>
+        </div>
+        <span class="section-note" data-i18n="popup.adjacentTabs">Adjacent tabs</span>
+      </div>
+      <div class="batch-actions">
+        <button class="button button-secondary" id="downloadLeft" type="button" data-i18n="popup.downloadLeft">← All left</button>
+        <button class="button button-secondary" id="downloadRight" type="button" data-i18n="popup.downloadRight">All right →</button>
+      </div>
+    </section>
+
+    <footer class="popup-footer">
+      <button class="footer-link" id="allDownloads" type="button" data-i18n="popup.lrrJobs">LANraragi jobs</button>
+      <span aria-hidden="true">·</span>
+      <button class="footer-link" id="openDownloadCenter" type="button" data-i18n="popup.downloadCenter">Download center</button>
+      <span class="shortcut-hint">Alt+Shift+D</span>
+    </footer>
+  </main>
+
+  <div class="launch-overlay hidden" id="launchOverlay" role="status" aria-live="polite">
+    <div class="launch-visual" id="launchVisual">
+      <span class="launch-ring launch-ring-one"></span>
+      <span class="launch-ring launch-ring-two"></span>
+      <span class="launch-core">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 4v11m0 0 4-4m-4 4-4-4M6 19h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </div>
+    <h2 id="launchTitle" data-i18n="popup.launch">Starting download</h2>
+    <p id="launchDetail" data-i18n="popup.connectingLRR">Connecting to the LANraragi download queue…</p>
+    <div class="launch-dots" aria-hidden="true">
+      <i></i><i></i><i></i>
+    </div>
   </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 

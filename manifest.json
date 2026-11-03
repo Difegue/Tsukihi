@@ -1,11 +1,13 @@
 {
   "name": "Tsukihi",
-  "version": "2.0",
-  "description": "Send URLs to your LANraragi server for downloading! 🐦",
+  "version": "2.1",
+  "description": "Send URLs to LANraragi or qBittorrent and track download progress.",
   "permissions": [
     "activeTab",
     "storage",
-    "notifications"
+    "notifications",
+    "contextMenus",
+    "alarms"
   ],
   "host_permissions": [
     "https://*/",
@@ -24,7 +26,7 @@
   },
   "background": {
     "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "scripts": ["i18n.js", "background.js"]
   },
   "action": {
     "default_popup": "popup.html",
@@ -33,6 +35,29 @@
       "32": "images/get_started32.png",
       "48": "images/get_started48.png",
       "128": "images/get_started128.png"
+    }
+  },
+  "commands": {
+    "download-current-tab": {
+      "suggested_key": {
+        "default": "Alt+Shift+D",
+        "mac": "Alt+Shift+D"
+      },
+      "description": "Download the current page to LANraragi"
+    },
+    "download-current-tab-qb": {
+      "suggested_key": {
+        "default": "Alt+Shift+Q",
+        "mac": "Alt+Shift+Q"
+      },
+      "description": "Send the current E-Hentai page to qBittorrent"
+    },
+    "open-download-center": {
+      "suggested_key": {
+        "default": "Alt+Shift+P",
+        "mac": "Alt+Shift+P"
+      },
+      "description": "Open the Tsukihi download center"
     }
   },
   "icons": {

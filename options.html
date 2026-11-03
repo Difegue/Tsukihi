@@ -1,115 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-i18n-document-title="options.pageTitle">
 
 <head>
   <meta charset="utf-8">
-  <style>
-    body {
-      background: #91C5D2;
-      background-image: url(./images/settings.png);
-      background-repeat: no-repeat;
-      background-position: bottom right;
-      height: 98vh;
-      background-size: 40%;
-    }
-
-    table {
-      margin: auto;
-      background: #ffffffbf;
-      border-radius: 4px;
-      padding: 4px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tsukihi Settings</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="options.css">
 </head>
 
-<body>
+<body class="options-body">
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
 
-  <table width="66%">
+  <header class="options-header">
+    <div class="brand">
+      <img class="brand-mark" src="images/get_started48.png" alt="">
+      <div>
+        <h1 class="brand-name">Tsukihi</h1>
+        <p class="brand-subtitle" data-i18n="options.subtitle">Download settings</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <select class="language-select" id="languageSelect" aria-label="Language" data-i18n-aria-label="common.language">
+        <option value="en">EN</option>
+        <option value="zh">中文</option>
+      </select>
+      <button class="button button-secondary" id="openDownloadCenter" type="button" data-i18n="options.openDownloadCenter">Open download center</button>
+      <span class="version-chip">v<span id="versionInfo">2.1</span></span>
+    </div>
+  </header>
 
-    <tr>
-      <td colspan="2">
-        <h2>Server settings</h2>
-      </td>
-    </tr>
+  <main class="options-main">
+    <section class="hero-card">
+      <div>
+        <span class="hero-kicker" data-i18n="options.kicker">SETTINGS</span>
+        <h2 data-i18n="options.title">Download settings</h2>
+        <p data-i18n="options.description">Configure LANraragi, qBittorrent, and download options.</p>
+      </div>
+      <div class="hero-orbit" aria-hidden="true">
+        <span class="orbit-dot orbit-direct">LRR</span>
+        <span class="orbit-dot orbit-qb">qB</span>
+        <span class="orbit-core">
+          <img src="images/get_started48.png" alt="">
+        </span>
+      </div>
+    </section>
 
-    <tr>
-      <td>Server URL :</td>
-      <td>
-        <input type="url" id="server" name="server" />
-      </td>
-    </tr>
+    <form class="settings-grid" id="settingsForm">
+      <section class="settings-card">
+        <header class="card-heading">
+          <span class="engine-icon engine-lrr" aria-hidden="true">LRR</span>
+          <div>
+            <span class="card-kicker" data-i18n="options.lrrKicker">DIRECT DOWNLOAD</span>
+            <h2>LANraragi</h2>
+          </div>
+          <span class="connection-dot" id="serverDot" data-tone="neutral"></span>
+        </header>
 
-    <tr>
-      <td>API Key :</td>
-      <td>
-        <input type="password" id="key" name="key" />
-      </td>
-    </tr>
+        <div class="field">
+          <label class="field-label" for="server" data-i18n="options.serverUrl">Server URL</label>
+          <input class="input" id="server" name="server" type="url" placeholder="http://192.168.1.10:3000" autocomplete="url">
+        </div>
 
-    <tr>
-      <td>
-        <button id="checkBtn">Check Server Status</button>
-      </td>
-      <td>
-        <span id="serverMsg"></span><br />
-        <span id="apiCheck"></span>
-      </td>
-    </tr>
+        <div class="field">
+          <label class="field-label" for="key" data-i18n="options.apiKey">API Key</label>
+          <input class="input" id="key" name="key" type="password" placeholder="LANraragi API Key" autocomplete="off">
+          <p class="field-hint" data-i18n="options.lrrApiHint">Used for direct downloads, categories, and task status.</p>
+        </div>
 
-  </table>
+        <div class="inline-actions">
+          <button class="button button-secondary" id="checkBtn" type="button" data-i18n="options.checkConnection">Check connection</button>
+          <span class="inline-status" id="serverMsg"></span>
+        </div>
+        <p class="inline-status" id="apiCheck"></p>
 
-  <br>
-  <table width="66%">
-    <tr>
-      <td colspan="2">
-        <h2>Download settings</h2>
-      </td>
-    </tr>
-    <tr>
-      <td>URL schemas downloadable by the server:</td>
-      <td>
-        <pre id="urlRegexes"></pre>
-      </td>
-    </tr>
-    <tr>
-      <td>Downloaded URLs will be <br>added to this Category:</td>
-      <td>
-        <select id="category">
-          <option disabled selected value> -- No Category -- </option>
-        </select>
-        <br>
-        <span id="categoryErr"></span>
-        <input type="text" id="catid" name="catid" style="display:none" />
-      </td>
-    </tr>
-    <tr>
-      <td>Close tab on successful download:</td>
-      <td><input id="closeOnDL" type="checkbox" /></td>
-    </tr>
-  </table>
+        <div class="card-divider"></div>
 
-  <br>
-  <table width="66%">
-    <tr>
-      <td colspan="2">
-        <button id="saveBtn" disabled>Save Settings</button>
-        <span id="statusMsg"></span>
-      </td>
-    </tr>
+        <div class="field">
+          <label class="field-label" for="category" data-i18n="options.category">Download category</label>
+          <select class="select" id="category">
+            <option selected value="" data-i18n="options.noCategory">— No category —</option>
+          </select>
+          <input id="catid" name="catid" type="hidden" value="">
+          <p class="field-hint" id="categoryErr" data-i18n="options.categoryHint">Connect the server to load categories.</p>
+        </div>
 
-    <tr>
-      <td colspan="2">
-        <br />
-        <span>You're using the <a href="http://github.com/Difegue/Tsukihi">Tsukihi</a>
-          extension for <a href="http://github.com/Difegue/LANraragi">LANraragi</a>,
-          Version <span id="versionInfo">0.1</span>. 🐦</span>
-      </td>
-    </tr>
-  </table>
+        <label class="checkbox-row" for="closeOnDL">
+          <input id="closeOnDL" type="checkbox">
+          <span class="checkbox-copy">
+            <span class="checkbox-title" data-i18n="options.closeAfterDownload">Close tab when download finishes</span>
+            <span class="checkbox-description" data-i18n="options.closeAfterDownloadHint">Applies to both LANraragi and qBittorrent tasks.</span>
+          </span>
+        </label>
 
+        <details class="advanced-panel">
+          <summary data-i18n="options.supportedUrls">Supported URL rules</summary>
+          <pre id="urlRegexes" data-i18n="options.loadAfterConnect">Connect the server to load values.</pre>
+        </details>
+      </section>
 
+      <section class="settings-card qb-settings-card">
+        <header class="card-heading">
+          <span class="engine-icon engine-qb" aria-hidden="true">qB</span>
+          <div>
+            <span class="card-kicker" data-i18n="options.qbKicker">TORRENT ENGINE</span>
+            <h2>qBittorrent</h2>
+          </div>
+          <span class="connection-dot" id="qbDot" data-tone="neutral"></span>
+        </header>
 
+        <label class="checkbox-row checkbox-accent" for="enableQB">
+          <input id="enableQB" type="checkbox">
+          <span class="checkbox-copy">
+            <span class="checkbox-title" data-i18n="options.enableQB">Enable E-Hentai qBittorrent downloads</span>
+            <span class="checkbox-description" data-i18n="options.enableQBHint">Shows a separate qBittorrent download button in the popup.</span>
+          </span>
+        </label>
+
+        <div class="field">
+          <label class="field-label" for="qbServer" data-i18n="options.webuiUrl">WebUI URL</label>
+          <input class="input" id="qbServer" name="qbServer" type="url" placeholder="http://192.168.1.10:8080" autocomplete="url">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="qbApiKey"><span data-i18n="options.apiKey">API Key</span> <span class="recommended-chip" data-i18n="options.recommended">Recommended</span></label>
+          <input class="input" id="qbApiKey" name="qbApiKey" type="password" placeholder="qbt_xxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+          <p class="field-hint" data-i18n="options.qbApiHint">New qBittorrent versions authenticate API keys with Authorization: Bearer.</p>
+        </div>
+
+        <div class="auth-divider"><span data-i18n="options.orPassword">Or use username and password</span></div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="qbUsername" data-i18n="options.username">Username</label>
+            <input class="input" id="qbUsername" name="qbUsername" type="text" placeholder="admin" autocomplete="username">
+          </div>
+          <div class="field">
+            <label class="field-label" for="qbPassword" data-i18n="options.password">Password</label>
+            <input class="input" id="qbPassword" name="qbPassword" type="password" placeholder="WebUI password" data-i18n-placeholder="options.passwordPlaceholder" autocomplete="current-password">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="qbPath"><span data-i18n="options.savePath">Download save path</span> <span class="optional-chip" data-i18n="options.optional">Optional</span></label>
+          <input class="input" id="qbPath" name="qbPath" type="text" placeholder="/downloads">
+          <p class="field-hint" data-i18n="options.savePathHint">Leave empty to use the qBittorrent default path.</p>
+        </div>
+
+        <div class="inline-actions">
+          <button class="button button-secondary" id="checkQBBtn" type="button" data-i18n="options.testQB">Test qBittorrent</button>
+          <span class="inline-status" id="qbStatusMsg"></span>
+        </div>
+      </section>
+    </form>
+
+    <section class="support-grid">
+      <article class="support-card">
+        <span class="support-kicker" data-i18n="options.keyboard">KEYBOARD</span>
+        <h3 data-i18n="options.shortcuts">Keyboard shortcuts</h3>
+        <div class="shortcut-list" id="shortcutList">
+          <div class="shortcut-row"><span data-i18n="options.shortcutDirect">Direct download current page</span><kbd>Alt+Shift+D</kbd></div>
+          <div class="shortcut-row"><span data-i18n="options.shortcutQB">Send current page to qBittorrent</span><kbd>Alt+Shift+Q</kbd></div>
+          <div class="shortcut-row"><span data-i18n="options.shortcutCenter">Open download center</span><kbd>Alt+Shift+P</kbd></div>
+        </div>
+      </article>
+
+      <article class="support-card">
+        <span class="support-kicker" data-i18n="options.contextMenu">CONTEXT MENU</span>
+        <h3 data-i18n="options.contextMenuTitle">Right-click menu</h3>
+        <p data-i18n="options.contextMenuHint">Download a page or link from its context menu.</p>
+      </article>
+
+      <article class="support-card">
+        <span class="support-kicker" data-i18n="options.progress">PROGRESS</span>
+        <h3 data-i18n="options.progressTitle">Download progress</h3>
+        <p data-i18n="options.progressHint">View torrent acquisition, overall progress, and file progress.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="save-bar">
+    <div class="save-copy">
+      <span class="save-kicker" data-i18n="options.saveKicker">SETTINGS</span>
+      <span id="statusMsg" data-i18n="options.settingsDirty">Changes are not saved yet.</span>
+    </div>
+    <button class="button button-primary save-button" id="saveBtn" type="submit" form="settingsForm" data-i18n="options.saveSettings">Save settings</button>
+  </footer>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="i18n.js"></script>
+  <script src="options.js"></script>
 </body>
-<script src="options.js"></script>
 
 </html>

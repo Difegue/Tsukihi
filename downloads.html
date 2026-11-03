@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-i18n-document-title="downloads.pageTitle">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tsukihi Download Center</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="downloads.css">
+</head>
+
+<body class="downloads-body">
+  <div class="downloads-glow downloads-glow-one" aria-hidden="true"></div>
+  <div class="downloads-glow downloads-glow-two" aria-hidden="true"></div>
+
+  <header class="downloads-header">
+    <div class="brand">
+      <img class="brand-mark" src="images/get_started48.png" alt="">
+      <div>
+        <h1 class="brand-name">Tsukihi</h1>
+        <p class="brand-subtitle" data-i18n="downloads.subtitle">Download center</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <select class="language-select" id="languageSelect" aria-label="Language" data-i18n-aria-label="common.language">
+        <option value="en">EN</option>
+        <option value="zh">中文</option>
+      </select>
+      <button class="button button-ghost" id="openLanraragi" type="button" data-i18n="downloads.openJobs">LANraragi jobs</button>
+      <button class="button button-ghost" id="openQB" type="button" data-i18n="downloads.openQB">Open qBittorrent</button>
+      <button class="icon-button" id="settingsButton" type="button" title="Open settings" data-i18n-title="downloads.openSettings">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9.7 3.7h4.6l.6 2.2c.5.2 1 .5 1.4.8l2.2-.7 2.3 4-1.6 1.6v1.6l1.6 1.6-2.3 4-2.2-.7c-.4.3-.9.6-1.4.8l-.6 2.2H9.7l-.6-2.2a8 8 0 0 1-1.4-.8l-2.2.7-2.3-4L4.8 13v-1.6L3.2 9.8l2.3-4 2.2.7c.4-.3.9-.6 1.4-.8l.6-2.2Z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.45"/>
+        </svg>
+      </button>
+      <button class="icon-button" id="refreshButton" type="button" title="Refresh now" data-i18n-title="downloads.refresh">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18.2 9A7 7 0 0 0 6.1 7.5L4 12m16 0-2.1 4.5A7 7 0 0 1 5.8 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="downloads-main">
+    <section class="downloads-hero">
+      <div class="hero-copy">
+        <div class="hero-live"><span id="liveDot"></span><span id="liveText" data-i18n="downloads.syncing">Syncing tasks</span></div>
+        <h2 data-i18n="downloads.title">Download tasks</h2>
+        <p data-i18n="downloads.description">View LANraragi and qBittorrent download status and progress.</p>
+      </div>
+      <div class="summary-grid" aria-label="Task statistics" data-i18n-aria-label="downloads.stats">
+        <div class="summary-card">
+          <span data-i18n="downloads.active">Active</span>
+          <strong id="countActive">0</strong>
+          <small data-i18n="downloads.activeCaption">IN PROGRESS</small>
+        </div>
+        <div class="summary-card">
+          <span data-i18n="downloads.completed">Completed</span>
+          <strong id="countCompleted">0</strong>
+          <small data-i18n="downloads.completedCaption">DONE</small>
+        </div>
+        <div class="summary-card">
+          <span data-i18n="downloads.failed">Failed</span>
+          <strong id="countError">0</strong>
+          <small data-i18n="downloads.failedCaption">ERRORS</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="downloads-toolbar">
+      <div class="filter-tabs" role="tablist" aria-label="Filter download tasks" data-i18n-aria-label="downloads.filterTasks">
+        <button class="filter-chip" data-filter="active" type="button" role="tab" aria-selected="true">
+          <span data-i18n="downloads.active">Active</span> <span data-count="active">0</span>
+        </button>
+        <button class="filter-chip" data-filter="all" type="button" role="tab" aria-selected="false">
+          <span data-i18n="downloads.all">All</span> <span data-count="all">0</span>
+        </button>
+        <button class="filter-chip" data-filter="completed" type="button" role="tab" aria-selected="false">
+          <span data-i18n="downloads.completed">Completed</span> <span data-count="completed">0</span>
+        </button>
+        <button class="filter-chip" data-filter="error" type="button" role="tab" aria-selected="false">
+          <span data-i18n="downloads.failed">Failed</span> <span data-count="error">0</span>
+        </button>
+      </div>
+      <button class="button button-ghost button-danger-ghost" id="clearFinished" type="button" data-i18n="downloads.clearFinished">Clear finished tasks</button>
+    </section>
+
+    <section class="task-list" id="taskList" aria-live="polite" aria-busy="true">
+      <div class="loading-card">
+        <span class="spinner"></span>
+        <div>
+          <strong data-i18n="downloads.loadingTitle">Loading download tasks</strong>
+          <p data-i18n="downloads.loadingHint">The first sync may take a few seconds.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="i18n.js"></script>
+  <script src="downloads.js"></script>
+</body>
+
+</html>
