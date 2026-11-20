@@ -137,7 +137,7 @@ function checkUrl(serverUrl, apiKey, tab) {
  */
 function updateTabInfo(tab, infoObject) {
 
-  chrome.tabs.get(tab.id, function () {
+  chrome.tabs.get(tab.id, function (updatedTab) {
 
     if (chrome.runtime.lastError) {
 
@@ -151,7 +151,7 @@ function updateTabInfo(tab, infoObject) {
 
       // Save info in hashmap, and send it to the popup if it's open
       tabHashmap.set(tab.id, infoObject);
-      if (tab.active)
+      if (updatedTab.active)
         chrome.runtime.sendMessage({ type: "updateFromBackground", data: infoObject });
     }
   });
