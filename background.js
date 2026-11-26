@@ -14,6 +14,7 @@ const keepAlive = setInterval(chrome.runtime.getPlatformInfo, 25 * 1000);
 
 chrome.runtime.onInstalled.addListener(function () {
   chrome.runtime.openOptionsPage();
+  // Perms are needed to check URLs against the server automatically (instead of having the user click refresh)
   chrome.permissions.request({ origins: ["https://*/","http://*/"] });
 });
 
