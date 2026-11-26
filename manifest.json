@@ -1,6 +1,6 @@
 {
   "name": "Tsukihi",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Send URLs to your LANraragi server for downloading! 🐦",
   "permissions": [
     "activeTab",
@@ -14,8 +14,11 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "tsukihi@lanraragi.extension",
-      "strict_min_version": "109.0"
+      "strict_min_version": "121.0"
     }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "options_page": "options.html",
   "options_ui": {
@@ -24,7 +27,9 @@
   },
   "background": {
     "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "action": {
     "default_popup": "popup.html",
